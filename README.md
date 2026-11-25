@@ -10,7 +10,7 @@ A Node.js pipeline that extracts HubSpot CRM contacts, validates and deduplicate
 
 - 16 automated tests pass; GitHub Actions CI passes.
 - A successful manual run loaded 287 accepted contacts, rejected 15, and refreshed three Google Sheets report tabs (208 leads-by-day rows, 50 funnel rows, and 8 run-history rows).
-- The workflow is scheduled daily at 05:15 UTC. The first automatic scheduled run has not yet been verified.
+- Daily GitHub Actions schedule configured for 05:15 UTC; end-to-end pipeline and dashboard publishing have been manually verified.
 - The dashboard combines lead trends, lifecycle funnel, and pipeline-run monitoring.
 
 ## Architecture
