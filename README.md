@@ -1,16 +1,17 @@
 # Marketing Data Pipeline
 
-A Node.js pipeline that extracts HubSpot CRM contacts, validates and deduplicates them, and loads privacy-minimized records into Google BigQuery for reporting.
+A Node.js pipeline that extracts HubSpot CRM contacts, validates and deduplicates them, loads privacy-minimized records into BigQuery, and publishes aggregate reports to a Looker Studio dashboard. It includes data-quality gates, retry handling, and a GitHub Actions workflow scheduled to run daily.
+
+**[Live Marketing Pipeline Dashboard](https://datastudio.google.com/reporting/f517ada2-4800-4078-92be-2926c07fe757)** (demo data)
+
+![Marketing Pipeline Dashboard](docs/screenshots/marketing-pipeline-dashboard.png)
 
 ## Project status
 
-- 16 Vitest tests pass.
-- HubSpot pagination and retries are covered by unit tests.
-- Manual GitHub Actions pipeline runs have loaded 287 contacts and recorded 15 rejected contacts in BigQuery.
-- A GitHub Actions run on 2026-11-25 successfully published 208 leads-by-day rows, 50 funnel rows, and 8 pipeline-run rows to the configured Google Sheet.
-- The project owner confirmed that the combined Looker Studio dashboard displays the lead, funnel, and pipeline-run charts.
-- GitHub Actions CI passes. The daily workflow is configured for 05:15 UTC, but the first automatically scheduled run has not yet been observed; recent pipeline runs were manual.
-- [Open the Marketing Pipeline Dashboard](https://datastudio.google.com/reporting/f517ada2-4800-4078-92be-2926c07fe757) in Looker Studio.
+- 16 automated tests pass; GitHub Actions CI passes.
+- A successful manual run loaded 287 accepted contacts, rejected 15, and refreshed three Google Sheets report tabs (208 leads-by-day rows, 50 funnel rows, and 8 run-history rows).
+- The workflow is scheduled daily at 05:15 UTC. The first automatic scheduled run has not yet been verified.
+- The dashboard combines lead trends, lifecycle funnel, and pipeline-run monitoring.
 
 ## Architecture
 
@@ -20,6 +21,8 @@ HubSpot Contacts API -> Node.js extraction and transformation -> partitioned Big
 - `contact_rejects`: missing, invalid, or duplicate email rejection reasons.
 - `pipeline_runs`: append-only execution metadata and quality gate outcomes.
 - `rpt_leads_by_source_daily` and `rpt_funnel`: SQL reporting tables.
+
+The dashboard uses Google Sheets as its Looker Studio connector. The pipeline refreshes Sheets from BigQuery with aggregate report fields only, which keeps direct BigQuery access out of the dashboard connection and avoids exposing contact-level data there. A direct Looker Studio-to-BigQuery connector is an alternative when the project and billing setup support it.
 
 ## Requirements
 
@@ -76,10 +79,16 @@ The pipeline runs on manual dispatch and daily at `05:15 UTC`. When Sheets publi
 - Sheets receives aggregate report fields only; raw emails, email hashes, HubSpot IDs, and error text are excluded.
 - The pipeline uses synthetic/test contacts and should not process unauthorized personal data.
 
+## Troubleshooting data mismatches
+
+1. Check that day's `pipeline_runs` record for run status and extracted, loaded, and rejected counts.
+2. Compare accepted and rejected counts with the authorized HubSpot test data for the run.
+3. Check `contacts`, `contact_rejects`, and the relevant `rpt_*` BigQuery output.
+4. Compare the Google Sheets tab with that report output, then check Looker Studio date filters, chart metrics, and data-source selection.
+
 ## Limitations
 
 - Google BigQuery Sandbox has a 10 GiB lifetime storage quota and tables/partitions expire after 60 days; it is not suitable for durable production retention.
-- No public Looker Studio dashboard link is recorded.
 - The full HubSpot result set is collected in memory.
 - Existing BigQuery schemas are not automatically migrated.
 - HubSpot and Google Cloud credentials are external prerequisites.
