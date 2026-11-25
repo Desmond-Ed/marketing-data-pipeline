@@ -14,15 +14,15 @@ const variants = [
   ['/crm/properties/2026-09/contacts', { ...body, options: [] }],
 ];
 
-for (const [path, b] of variants) {
+for (const [path, bodyValue] of variants) {
   const res = await fetch(cfg.hubspotBase + path, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${cfg.hubspotToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(b),
+    body: JSON.stringify(bodyValue),
   });
   const text = await res.text();
-  console.log(path, Object.keys(b).join(','), '->', res.status, text.slice(0, 500));
+  console.log(path, Object.keys(bodyValue).join(','), '->', res.status, text.slice(0, 500));
 }
