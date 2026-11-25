@@ -2,14 +2,15 @@
 
 A Node.js pipeline that extracts HubSpot CRM contacts, validates and deduplicates them, and loads privacy-minimized records into Google BigQuery for reporting.
 
-## Verified status
+## Project status
 
 - 16 Vitest tests pass.
 - HubSpot pagination and retries are covered by unit tests.
 - Manual GitHub Actions pipeline runs have loaded 287 contacts and recorded 15 rejected contacts in BigQuery.
 - A GitHub Actions run on 2026-11-25 successfully published 208 leads-by-day rows, 50 funnel rows, and 8 pipeline-run rows to the configured Google Sheet.
-- GitHub Actions CI and the daily pipeline workflow are configured.
-- The project owner confirmed the three Looker Studio reports display data. They are separate reports; no public dashboard link is recorded.
+- The project owner confirmed that the three separate Looker Studio reports display data.
+- GitHub Actions CI passes. The daily workflow is configured for 05:15 UTC, but the first automatically scheduled run has not yet been observed; recent pipeline runs were manual.
+- No public Looker Studio report link is recorded.
 
 ## Architecture
 
