@@ -2,7 +2,7 @@
 
 **Last checked:** 2026-11-25
 **Repository:** `Desmond-Ed/marketing-data-pipeline`
-**Implementation baseline:** `17677c1` (`feat: complete BigQuery marketing pipeline`)
+**Implementation baseline:** `a9e8c82` (`feat: add dry-run and manual pipeline workflows`)
 **Purpose:** Give a new coding agent a ground-up, evidence-based understanding of the project and its actual state.
 
 ## 1. What this project is
@@ -36,9 +36,11 @@ HubSpot Contacts API
 - Empty-extract and 20% maximum reject-rate quality gates.
 - CI and manual pipeline GitHub Actions workflow definitions. The pipeline workflow schedule is commented out and not enabled.
 - Vitest unit tests for contact transformation, HubSpot retry behavior, pagination, and dry-run isolation (all tests use mock responses; no live API calls).
-- A successful authenticated end-to-end run was observed on 2026-11-25: **302 records extracted, 15 rejected, and both SQL models built**. The terminal reported `rows_loaded: 302`; in the current runner this is the combined number of valid contact rows and reject rows (287 + 15), not 302 accepted contacts.
+- An earlier authenticated end-to-end run was observed on 2026-11-25: **302 records extracted, 15 rejected, and both SQL models built**. Before the metric correction, that run reported `rows_loaded: 302` (287 accepted contacts plus 15 rejects). The current metric counts accepted contacts only.
 - `npm run setup:bq` succeeded and reported that all three base tables already existed.
-- The last recorded test run passed: **3 test files, 10 tests**.
+- Two subsequent authenticated pipeline runs both succeeded with **302 extracted, 287 accepted contacts loaded, 15 rejected, and both SQL models built**. BigQuery confirmed the contacts partition remained at 287 rows after the second run, and both successful records were present in `pipeline_runs`.
+- A controlled run with a temporary invalid token exited non-zero and wrote a `failed` record to `pipeline_runs`; `.env` was not changed. BigQuery confirmed the daily reject breakdown was 15 `missing_email`.
+- The last recorded test run passed: **3 test files, 11 tests**.
 
 ### Not present or not yet verified
 
@@ -154,7 +156,7 @@ The GitHub pipeline workflow expects repository secret `HUBSPOT_TOKEN`, reposito
 
 ### Current metric semantics
 
-`rows_extracted` is source records fetched. `rows_rejected` is transformed rejects. `rows_loaded` currently sums the accepted-contact load count **and** reject load count. If consumers expect `rows_loaded` to mean accepted contacts only, the implementation/reporting contract needs to be changed deliberately and tested.
+`rows_extracted` is source records fetched. `rows_rejected` is transformed rejects. `rows_loaded` counts accepted contact rows loaded to `contacts`; rejected rows are counted separately and are not included. A unit test verifies this distinction.
 
 ## 7. BigQuery data model
 

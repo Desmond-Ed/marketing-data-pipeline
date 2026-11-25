@@ -94,19 +94,18 @@ export async function runPipeline({
       logger('info', 'dry_run_complete');
     } else {
       const partition = snapshotDate.replaceAll('-', '');
-      run.rows_loaded =
-        (await load({
-          table: dataset.table(`contacts$${partition}`),
-          rows,
-          schema: CONTACT_SCHEMA,
-          mode: 'replace',
-        })) +
-        (await load({
-          table: dataset.table(`contact_rejects$${partition}`),
-          rows: rejects,
-          schema: REJECT_SCHEMA,
-          mode: 'replace',
-        }));
+      run.rows_loaded = await load({
+        table: dataset.table(`contacts$${partition}`),
+        rows,
+        schema: CONTACT_SCHEMA,
+        mode: 'replace',
+      });
+      await load({
+        table: dataset.table(`contact_rejects$${partition}`),
+        rows: rejects,
+        schema: REJECT_SCHEMA,
+        mode: 'replace',
+      });
       await buildModels({ bq, cfg });
     }
   } catch (error) {

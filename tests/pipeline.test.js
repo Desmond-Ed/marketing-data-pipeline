@@ -35,4 +35,41 @@ describe('runPipeline', () => {
     expect(buildModels).not.toHaveBeenCalled();
     expect(logger).toHaveBeenCalledWith('info', 'dry_run_complete');
   });
+
+  it('counts accepted contact rows separately from reject rows', async () => {
+    const table = { exists: vi.fn().mockResolvedValue([true]) };
+    const dataset = {
+      get: vi.fn(),
+      table: vi.fn(() => table),
+    };
+    dataset.get.mockResolvedValue([dataset]);
+    const bq = { dataset: vi.fn(() => dataset), query: vi.fn() };
+    const load = vi.fn()
+      .mockResolvedValueOnce(4)
+      .mockResolvedValueOnce(1)
+      .mockResolvedValueOnce(1);
+    const extract = vi.fn(async function* () {
+      yield [
+        { id: '1', properties: { email: 'one@example.com' } },
+        { id: '2', properties: { email: 'two@example.com' } },
+        { id: '3', properties: { email: 'three@example.com' } },
+        { id: '4', properties: { email: 'four@example.com' } },
+        { id: '5', properties: {} },
+      ];
+    });
+
+    const run = await runPipeline({
+      cfg: { projectId: 'test-project', dataset: 'test', location: 'US' },
+      dryRun: false,
+      createBigQuery: () => bq,
+      extract,
+      load,
+      buildModels: vi.fn(),
+      logger: vi.fn(),
+    });
+
+    expect(run.rows_loaded).toBe(4);
+    expect(run.rows_rejected).toBe(1);
+    expect(load).toHaveBeenCalledTimes(3);
+  });
 });
