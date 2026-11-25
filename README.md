@@ -2,7 +2,7 @@
 
 A Node.js pipeline that extracts HubSpot CRM contacts, validates and deduplicates them, loads privacy-minimized records into BigQuery, and publishes aggregate reports to a Looker Studio dashboard. It includes data-quality gates, retry handling, and a GitHub Actions workflow scheduled to run daily.
 
-**[Live Marketing Pipeline Dashboard](https://datastudio.google.com/reporting/f517ada2-4800-4078-92be-2926c07fe757)** (demo data)
+**[Live Marketing Pipeline Dashboard](https://datastudio.google.com/reporting/f517ada2-4800-4078-92be-2926c07fe757)** (synthetic/test data)
 
 ![Marketing Pipeline Dashboard](docs/screenshots/marketing-pipeline-dashboard.png)
 
@@ -77,7 +77,7 @@ The pipeline runs on manual dispatch and daily at `05:15 UTC`. When Sheets publi
 - Raw email addresses are not stored; hashes are pseudonymized, not anonymous.
 - Contacts and rejects use daily BigQuery partitions.
 - Sheets receives aggregate report fields only; raw emails, email hashes, HubSpot IDs, and error text are excluded.
-- The pipeline uses synthetic/test contacts and should not process unauthorized personal data.
+- The pipeline uses synthetic/test data and should not process unauthorized personal data.
 
 ## Troubleshooting data mismatches
 
