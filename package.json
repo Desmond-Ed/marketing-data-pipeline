@@ -1,0 +1,26 @@
+{
+  "name": "marketing-data-pipeline",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest run",
+    "setup:bq": "node scripts/setup-bigquery.js",
+    "seed": "node scripts/seed-hubspot.js",
+    "pipeline": "node src/run.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@google-cloud/bigquery": "^9.6.1",
+    "dotenv": "^18.0.10"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.2"
+  }
+}
