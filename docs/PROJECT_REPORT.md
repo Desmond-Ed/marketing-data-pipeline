@@ -34,7 +34,7 @@ HubSpot Contacts API
 - Two BigQuery SQL report models.
 - `DRY_RUN=1` extracts and transforms, applies the quality gates, logs completion, and skips BigQuery client creation and all BigQuery calls, including the `pipeline_runs` insert. An automated test verifies the dry-run path does not create a BigQuery client or call the loader/model code.
 - Empty-extract and 20% maximum reject-rate quality gates.
-- CI and manual pipeline GitHub Actions workflow definitions. The pipeline workflow schedule is commented out and not enabled.
+- CI and pipeline GitHub Actions workflow definitions. The pipeline workflow runs manually or daily at `15 5 * * *` UTC.
 - Vitest unit tests for contact transformation, HubSpot retry behavior, pagination, and dry-run isolation (all tests use mock responses; no live API calls).
 - An earlier authenticated end-to-end run was observed on 2026-11-25: **302 records extracted, 15 rejected, and both SQL models built**. Before the metric correction, that run reported `rows_loaded: 302` (287 accepted contacts plus 15 rejects). The current metric counts accepted contacts only.
 - `npm run setup:bq` succeeded and reported that all three base tables already existed.
@@ -44,11 +44,11 @@ HubSpot Contacts API
 
 ### Not present or not yet verified
 
-- No checked-in `README.md`, verified GitHub Actions run, or enabled scheduled pipeline is recorded at the last review.
+- No checked-in `README.md` is recorded at the last review.
 - No Looker Studio dashboard URL, screenshots, or verified dashboard deployment is recorded in this repository.
-- At the last check, `gh secret list` and `gh variable list` returned no entries. Do not start the pipeline workflow until the owner adds `HUBSPOT_TOKEN`, `GCP_SA_KEY`, and `GCP_PROJECT_ID`.
+- `HUBSPOT_TOKEN`, `GCP_SA_KEY`, and `GCP_PROJECT_ID` are configured in GitHub Actions. The repository variable and secret names are not secret values and may be referenced in workflow configuration.
 - Workflow actions use the current major tags checked for this change: `actions/checkout@v7`, `actions/setup-node@v7`, and `google-github-actions/auth@v3`.
-- The guide's deployment, enabled schedule, dashboard, fresh-clone, and final application checkpoints are future work unless independently verified.
+- The guide's dashboard, fresh-clone, and final application checkpoints are future work unless independently verified.
 - The build guide is user-provided context and is not checked into the repository.
 
 Never report any of these planned items as shipped without checking the repository and, where applicable, the external service.
@@ -209,9 +209,9 @@ The SQL uses BigQuery backticks and GoogleSQL syntax. It is not SQL Server SQL. 
 
 Treat this as a roadmap, not a statement of current functionality:
 
-1. Validate GitHub Actions CI and the manual pipeline workflow after their commits are pushed.
-2. Configure `HUBSPOT_TOKEN`, `GCP_SA_KEY`, and `GCP_PROJECT_ID` in GitHub settings; do not share their values with the agent.
-3. Manually run the pipeline workflow and verify a successful run and a corresponding `pipeline_runs` row. Only then enable the cron schedule (`15 5 * * *`) and push the change.
+1. GitHub Actions CI and the manual pipeline workflow are verified.
+2. `HUBSPOT_TOKEN`, `GCP_SA_KEY`, and `GCP_PROJECT_ID` are configured in GitHub settings.
+3. Two manual pipeline runs succeeded and confirmed BigQuery run metadata. The daily schedule (`15 5 * * *` UTC) is now enabled.
 4. Fix and test empty partition replacement behavior so same-day reruns cannot leave stale data.
 5. Build and verify Looker Studio data sources/dashboard; document a public URL only if intentionally published.
 6. Add a README with architecture, verified run results, privacy/cost/retention limits, and quick start. Do not invent dashboard URLs, scheduled-run metrics, or success rates.

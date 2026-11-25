@@ -2,9 +2,8 @@ name: pipeline
 
 on:
   workflow_dispatch:
-  # Enable only after credentials are configured and a manual run succeeds.
-  # schedule:
-  #   - cron: '15 5 * * *'
+  schedule:
+    - cron: '15 5 * * *'
 
 concurrency:
   group: pipeline
