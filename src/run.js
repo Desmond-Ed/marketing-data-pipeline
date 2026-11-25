@@ -6,7 +6,7 @@ import { BigQuery } from '@google-cloud/bigquery';
 import { getConfig } from './config.js';
 import { extractContacts } from './hubspot/extract.js';
 import { transformContacts } from './transform/contacts.js';
-import { loadNdjson } from './bigquery/load.js';
+import { clearPartition, loadNdjson } from './bigquery/load.js';
 import { runModels } from './bigquery/model.js';
 import { CONTACT_SCHEMA, REJECT_SCHEMA, RUN_SCHEMA } from './bigquery/schemas.js';
 import { log } from './logger.js';
@@ -35,6 +35,7 @@ export async function runPipeline({
   createBigQuery = (config) => new BigQuery({ projectId: config.projectId, location: config.location }),
   extract = extractContacts,
   load = loadNdjson,
+  clear = clearPartition,
   buildModels = runModels,
   logger = log,
   now = () => new Date(),
@@ -94,18 +95,26 @@ export async function runPipeline({
       logger('info', 'dry_run_complete');
     } else {
       const partition = snapshotDate.replaceAll('-', '');
-      run.rows_loaded = await load({
-        table: dataset.table(`contacts$${partition}`),
-        rows,
-        schema: CONTACT_SCHEMA,
-        mode: 'replace',
-      });
-      await load({
-        table: dataset.table(`contact_rejects$${partition}`),
-        rows: rejects,
-        schema: REJECT_SCHEMA,
-        mode: 'replace',
-      });
+      if (rows.length === 0) {
+        await clear({ bq, cfg, tableName: 'contacts', snapshotDate });
+      } else {
+        run.rows_loaded = await load({
+          table: dataset.table(`contacts$${partition}`),
+          rows,
+          schema: CONTACT_SCHEMA,
+          mode: 'replace',
+        });
+      }
+      if (rejects.length === 0) {
+        await clear({ bq, cfg, tableName: 'contact_rejects', snapshotDate });
+      } else {
+        await load({
+          table: dataset.table(`contact_rejects$${partition}`),
+          rows: rejects,
+          schema: REJECT_SCHEMA,
+          mode: 'replace',
+        });
+      }
       await buildModels({ bq, cfg });
     }
   } catch (error) {

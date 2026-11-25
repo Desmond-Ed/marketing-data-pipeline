@@ -41,6 +41,7 @@ HubSpot Contacts API
 - Two subsequent authenticated pipeline runs both succeeded with **302 extracted, 287 accepted contacts loaded, 15 rejected, and both SQL models built**. BigQuery confirmed the contacts partition remained at 287 rows after the second run, and both successful records were present in `pipeline_runs`.
 - A controlled run with a temporary invalid token exited non-zero and wrote a `failed` record to `pipeline_runs`; `.env` was not changed. BigQuery confirmed the daily reject breakdown was 15 `missing_email`.
 - The last recorded test run passed: **3 test files, 11 tests**.
+- The zero-row partition replacement implementation was covered by an added unit test; the last test run passed with **3 test files, 12 tests**.
 
 ### Not present or not yet verified
 
@@ -212,7 +213,7 @@ Treat this as a roadmap, not a statement of current functionality:
 1. GitHub Actions CI and the manual pipeline workflow are verified.
 2. `HUBSPOT_TOKEN`, `GCP_SA_KEY`, and `GCP_PROJECT_ID` are configured in GitHub settings.
 3. Two manual pipeline runs succeeded and confirmed BigQuery run metadata. The daily schedule (`15 5 * * *` UTC) is now enabled.
-4. Fix and test empty partition replacement behavior so same-day reruns cannot leave stale data.
+4. Empty partition replacement is implemented and unit-tested for table inputs with no rows.
 5. Build and verify Looker Studio data sources/dashboard; document a public URL only if intentionally published.
 6. Add a README with architecture, verified run results, privacy/cost/retention limits, and quick start. Do not invent dashboard URLs, scheduled-run metrics, or success rates.
 7. Run a fresh-clone verification and scan both current files and Git history for exposed credentials before sharing the repository.

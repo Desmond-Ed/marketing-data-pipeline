@@ -23,3 +23,12 @@ export async function loadNdjson({ table, rows, schema, mode }) {
     await rm(dir, { recursive: true, force: true });
   }
 }
+
+export async function clearPartition({ bq, cfg, tableName, snapshotDate }) {
+  await bq.query({
+    query: `DELETE FROM \`${cfg.projectId}.${cfg.dataset}.${tableName}\` WHERE snapshot_date = @snapshotDate`,
+    params: { snapshotDate },
+    types: { snapshotDate: 'DATE' },
+    location: cfg.location,
+  });
+}

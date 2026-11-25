@@ -72,4 +72,42 @@ describe('runPipeline', () => {
     expect(run.rows_rejected).toBe(1);
     expect(load).toHaveBeenCalledTimes(3);
   });
+
+  it('clears same-day partitions when a loaded table has no rows', async () => {
+    const table = { exists: vi.fn().mockResolvedValue([true]) };
+    const dataset = {
+      get: vi.fn(),
+      table: vi.fn(() => table),
+    };
+    dataset.get.mockResolvedValue([dataset]);
+    const bq = { dataset: vi.fn(() => dataset), query: vi.fn() };
+    const clear = vi.fn();
+    const extract = vi.fn(async function* () {
+      yield [
+        { id: '1', properties: { email: 'one@example.com' } },
+        { id: '2', properties: { email: 'two@example.com' } },
+        { id: '3', properties: { email: 'three@example.com' } },
+        { id: '4', properties: { email: 'four@example.com' } },
+        { id: '5', properties: { email: 'five@example.com' } },
+      ];
+    });
+
+    await runPipeline({
+      cfg: { projectId: 'test-project', dataset: 'test', location: 'US' },
+      dryRun: false,
+      createBigQuery: () => bq,
+      extract,
+      load: vi.fn(),
+      clear,
+      buildModels: vi.fn(),
+      logger: vi.fn(),
+      now: () => new Date('2026-11-25T12:00:00.000Z'),
+    });
+
+    expect(clear).toHaveBeenCalledTimes(1);
+    expect(clear).toHaveBeenCalledWith(expect.objectContaining({
+      tableName: 'contact_rejects',
+      snapshotDate: '2026-11-25',
+    }));
+  });
 });
