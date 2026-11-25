@@ -7,8 +7,9 @@ A Node.js pipeline that extracts HubSpot CRM contacts, validates and deduplicate
 - 16 Vitest tests pass.
 - HubSpot pagination and retries are covered by unit tests.
 - Manual GitHub Actions pipeline runs have loaded 287 contacts and recorded 15 rejected contacts in BigQuery.
+- A GitHub Actions run on 2026-11-25 successfully published 208 leads-by-day rows, 50 funnel rows, and 8 pipeline-run rows to the configured Google Sheet.
 - GitHub Actions CI and the daily pipeline workflow are configured.
-- The pipeline can publish three aggregate report tabs to a configured Google Sheet; the spreadsheet and dashboard still need to be created and verified by the owner.
+- The project owner confirmed the three Looker Studio reports display data. They are separate reports; no public dashboard link is recorded.
 
 ## Architecture
 
@@ -77,7 +78,7 @@ The pipeline runs on manual dispatch and daily at `05:15 UTC`. When Sheets publi
 ## Limitations
 
 - Google BigQuery Sandbox has a 10 GiB lifetime storage quota and tables/partitions expire after 60 days; it is not suitable for durable production retention.
-- No verified Google Sheet or Looker Studio dashboard is currently published.
+- No public Looker Studio dashboard link is recorded.
 - The full HubSpot result set is collected in memory.
 - Existing BigQuery schemas are not automatically migrated.
 - HubSpot and Google Cloud credentials are external prerequisites.

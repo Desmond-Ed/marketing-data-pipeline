@@ -41,13 +41,15 @@ HubSpot Contacts API
 - An earlier authenticated end-to-end run was observed on 2026-11-25: **302 records extracted, 15 rejected, and both SQL models built**. Before the metric correction, that run reported `rows_loaded: 302` (287 accepted contacts plus 15 rejects). The current metric counts accepted contacts only.
 - `npm run setup:bq` succeeded and reported that all three base tables already existed.
 - Two subsequent authenticated pipeline runs both succeeded with **302 extracted, 287 accepted contacts loaded, 15 rejected, and both SQL models built**. BigQuery confirmed the contacts partition remained at 287 rows after the second run, and both successful records were present in `pipeline_runs`.
+- On 2026-11-25, workflow run [45678974894](https://github.com/Desmond-Ed/marketing-data-pipeline/actions/runs/45678974894) succeeded after the Sheets publisher was deployed. It loaded **287 accepted contacts**, recorded **15 rejects**, and logged `reports_published` for **208 Leads by day rows, 50 Funnel rows, and 8 Pipeline runs rows**.
+- The project owner confirmed all three Looker Studio reports (Contacts by lifecycle stage, Leads by signup date, and Pipeline runs) display correctly. They are separate reports; a publicly accessible dashboard URL has not been recorded.
 - A controlled run with a temporary invalid token exited non-zero and wrote a `failed` record to `pipeline_runs`; `.env` was not changed. BigQuery confirmed the daily reject breakdown was 15 `missing_email`.
 - The zero-row partition replacement and Google Sheets publisher have unit coverage. The latest local test run passed: **4 test files, 16 tests**.
 
 ### Not present or not yet verified
 
-- A README is checked in, but no verified Google Sheet or Looker Studio dashboard URL, screenshot, or deployment is recorded.
-- Google Sheets publishing is optional until the owner creates the required tabs, enables the Sheets API, shares the spreadsheet with the service account, and configures `REPORT_SHEET_ID`.
+- A README is checked in. Google Sheets publishing has succeeded and the owner confirmed all three Looker Studio reports display. No public Looker Studio dashboard URL or screenshot is recorded.
+- The GitHub workflow publishes to the configured report sheet when `REPORT_SHEET_ID` is set.
 - `HUBSPOT_TOKEN`, `GCP_SA_KEY`, and `GCP_PROJECT_ID` are configured in GitHub Actions. The repository variable and secret names are not secret values and may be referenced in workflow configuration.
 - Workflow actions use the current major tags checked for this change: `actions/checkout@v7`, `actions/setup-node@v7`, and `google-github-actions/auth@v3`.
 - The guide's dashboard, fresh-clone, and final application checkpoints are future work unless independently verified.
@@ -209,7 +211,7 @@ The SQL uses BigQuery backticks and GoogleSQL syntax. It is not SQL Server SQL. 
 9. **External prerequisites.** Real execution requires valid HubSpot credentials/scopes, valid Google credentials, and BigQuery permissions/billing or sandbox access. Do not substitute SQL Server for BigQuery to work around SQL dialect errors.
 10. **Optional dashboard publisher.** If `REPORT_SHEET_ID` is configured, the pipeline writes only aggregate lead, funnel, and run metadata fields to the three required tabs. Sheets publishing errors fail the workflow, but are reported after the BigQuery run record is written.
 11. **Sandbox retention.** BigQuery Sandbox has a 10 GiB lifetime storage quota; tables, views, and partitions expire after 60 days. Confirm current Google limits before relying on Sandbox for a portfolio demo.
-12. **Deployment not fully verified.** CI and manual pipeline runs are verified and the daily schedule is enabled. No Google Sheet, Looker Studio dashboard, or successful end-to-end Sheets publish has yet been verified.
+12. **Deployment limitations.** CI, a manual BigQuery + Sheets pipeline run, and the three Looker Studio reports are verified. The daily schedule is enabled, but a successful automatically scheduled run has not yet been verified. No public dashboard URL is recorded.
 
 ## 9. Suggested next steps from the supplied build guide
 
@@ -219,9 +221,9 @@ Treat this as a roadmap, not a statement of current functionality:
 2. `HUBSPOT_TOKEN`, `GCP_SA_KEY`, and `GCP_PROJECT_ID` are configured in GitHub settings.
 3. Two manual pipeline runs succeeded and confirmed BigQuery run metadata. The daily schedule (`15 5 * * *` UTC) is now enabled.
 4. Empty partition replacement and optional aggregate Sheets publishing are implemented and covered by unit tests.
-5. Create the spreadsheet, tabs, service-account sharing, and `REPORT_SHEET_ID`; manually run the workflow and verify its three tabs refresh correctly.
-6. Create and verify Looker Studio data sources/dashboard; document a public URL only if intentionally published and safe.
-7. README includes architecture, setup, privacy, and known free-tier retention limits. Keep actual external run metrics and links evidence-based.
+5. The report spreadsheet, tabs, service-account sharing, `REPORT_SHEET_ID`, and manual publish are verified.
+6. The owner confirmed all three Looker Studio reports display correctly; document a public URL only if intentionally published and safe.
+7. Verify a successful scheduled run. README includes architecture, setup, privacy, and known free-tier retention limits.
 8. Run fresh-clone verification and scan current files and Git history for exposed credentials before wider sharing.
 
 The supplied guide has example snippets that differ from the checked-in implementation. Its module example imports `bigquery/models.js`, while the actual module is `src/bigquery/model.js`. Prefer the code in this repository, then update the guide/report intentionally.
