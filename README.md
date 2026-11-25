@@ -10,7 +10,7 @@ A Node.js pipeline that extracts HubSpot CRM contacts, validates and deduplicate
 - A GitHub Actions run on 2026-11-25 successfully published 208 leads-by-day rows, 50 funnel rows, and 8 pipeline-run rows to the configured Google Sheet.
 - The project owner confirmed that the three separate Looker Studio reports display data.
 - GitHub Actions CI passes. The daily workflow is configured for 05:15 UTC, but the first automatically scheduled run has not yet been observed; recent pipeline runs were manual.
-- No public Looker Studio report link is recorded.
+- [Open the Leads by signup date Looker Studio report](https://datastudio.google.com/reporting/f517ada2-4800-4078-92be-2926c07fe757). This is one of the three separate reports, not a combined dashboard.
 
 ## Architecture
 
