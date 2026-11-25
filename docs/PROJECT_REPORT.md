@@ -1,8 +1,8 @@
 # Project report and agent handoff
 
-**Last checked:** 2026-11-25  
-**Repository:** `Desmond-Ed/marketing-data-pipeline`  
-**Source baseline:** `main` at `17677c1` (`feat: complete BigQuery marketing pipeline`)  
+**Last checked:** 2026-11-25
+**Repository:** `Desmond-Ed/marketing-data-pipeline`
+**Source baseline:** `main` at `17677c1` (`feat: complete BigQuery marketing pipeline`)
 **Purpose:** Give a new coding agent a ground-up, evidence-based understanding of the project and its actual state.
 
 ## 1. What this project is
@@ -32,16 +32,15 @@ HubSpot Contacts API
 - BigQuery schemas and table initialization for `contacts`, `contact_rejects`, and `pipeline_runs`.
 - NDJSON BigQuery load jobs and SQL model execution.
 - Two BigQuery SQL report models.
-- Vitest unit tests for contact transformation.
+- Vitest unit tests for contact transformation, HubSpot retry behavior, and pagination (all use mock responses; no live API calls).
 - A successful authenticated end-to-end run was observed on 2026-11-25: **302 records extracted, 15 rejected, and both SQL models built**. The terminal reported `rows_loaded: 302`; in the current runner this is the combined number of valid contact rows and reject rows (287 + 15), not 302 accepted contacts.
 - `npm run setup:bq` succeeded and reported that all three base tables already existed.
-- The last recorded test run passed: **1 test file, 5 tests**.
+- The last recorded test run passed: **2 test files, 9 tests**.
 
 ### Not present or not yet verified
 
 - No checked-in `README.md`, `.github/workflows/` CI workflow, or scheduled pipeline workflow was found at the last review.
 - No Looker Studio dashboard URL, screenshots, or verified dashboard deployment is recorded in this repository.
-- API retry/pagination behavior does not currently have dedicated tests; the checked-in tests only cover transformation behavior.
 - The supplied guide's `DRY_RUN=1` flow and 20% reject-rate/empty-extract quality gates are **not implemented** in `src/run.js`.
 - The guide's deployment, CI, schedule, dashboard, fresh-clone, and final application checkpoints are future work unless independently verified.
 - The build guide is user-provided context and is not checked into the repository.
@@ -195,15 +194,14 @@ The SQL uses BigQuery backticks and GoogleSQL syntax. It is not SQL Server SQL. 
 
 Treat this as a roadmap, not a statement of current functionality:
 
-1. Add unit tests for HubSpot retry/backoff and pagination using injected fake `fetch`/sleep functions.
-2. Decide and implement the quality contract: empty extracts, maximum reject ratio, and whether `rows_loaded` means accepted contacts or all table rows.
-3. Add a dry-run mode only if it can guarantee no BigQuery writes and still report clear outcomes.
-4. Fix and test empty partition replacement behavior so same-day reruns cannot leave stale data.
-5. Add CI for `npm ci` and `npm test`.
-6. Add a manually triggered/scheduled workflow only after secrets, permissions, concurrency, and recovery behavior are configured.
-7. Build and verify Looker Studio data sources/dashboard; document a public URL only if intentionally published.
-8. Add a README with architecture, verified run results, privacy/cost/retention limits, and quick start. Do not invent dashboard URLs, scheduled-run metrics, or success rates.
-9. Run a fresh-clone verification and scan both current files and Git history for exposed credentials before sharing the repository.
+1. Decide and implement the quality contract: empty extracts, maximum reject ratio, and whether `rows_loaded` means accepted contacts or all table rows.
+2. Add a dry-run mode only if it can guarantee no BigQuery writes and still report clear outcomes.
+3. Fix and test empty partition replacement behavior so same-day reruns cannot leave stale data.
+4. Add CI for `npm ci` and `npm test`.
+5. Add a manually triggered/scheduled workflow only after secrets, permissions, concurrency, and recovery behavior are configured.
+6. Build and verify Looker Studio data sources/dashboard; document a public URL only if intentionally published.
+7. Add a README with architecture, verified run results, privacy/cost/retention limits, and quick start. Do not invent dashboard URLs, scheduled-run metrics, or success rates.
+8. Run a fresh-clone verification and scan both current files and Git history for exposed credentials before sharing the repository.
 
 The supplied guide has example snippets that differ from the checked-in implementation. In particular, its dry-run and quality-gate behavior is aspirational, and one example imports `bigquery/models.js` while the actual module is `src/bigquery/model.js`. Prefer the code in this repository, then update the guide/report intentionally.
 
