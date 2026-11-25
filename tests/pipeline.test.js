@@ -57,20 +57,32 @@ describe('runPipeline', () => {
         { id: '5', properties: {} },
       ];
     });
+    const publish = vi.fn();
 
     const run = await runPipeline({
-      cfg: { projectId: 'test-project', dataset: 'test', location: 'US' },
+      cfg: {
+        projectId: 'test-project',
+        dataset: 'test',
+        location: 'US',
+        reportSheetId: 'test-sheet',
+      },
       dryRun: false,
       createBigQuery: () => bq,
       extract,
       load,
       buildModels: vi.fn(),
+      publish,
       logger: vi.fn(),
     });
 
     expect(run.rows_loaded).toBe(4);
     expect(run.rows_rejected).toBe(1);
     expect(load).toHaveBeenCalledTimes(3);
+    expect(publish).toHaveBeenCalledWith({
+      bq,
+      cfg: expect.objectContaining({ reportSheetId: 'test-sheet' }),
+    });
+    expect(load.mock.invocationCallOrder[2]).toBeLessThan(publish.mock.invocationCallOrder[0]);
   });
 
   it('clears same-day partitions when a loaded table has no rows', async () => {

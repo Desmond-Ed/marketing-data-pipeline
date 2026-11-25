@@ -14,5 +14,6 @@ export function getConfig() {
     projectId: required('GCP_PROJECT_ID'),
     dataset: process.env.BQ_DATASET ?? 'marketing',
     location: process.env.BQ_LOCATION ?? 'US',
+    reportSheetId: process.env.REPORT_SHEET_ID || undefined,
   };
 }

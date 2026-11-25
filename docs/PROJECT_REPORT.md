@@ -32,21 +32,22 @@ HubSpot Contacts API
 - BigQuery schemas and table initialization for `contacts`, `contact_rejects`, and `pipeline_runs`.
 - NDJSON BigQuery load jobs and SQL model execution.
 - Two BigQuery SQL report models.
+- Optional Google Sheets publishing for aggregate leads-by-day, funnel, and pipeline-run reports. Sheet tabs are replaced in one batch update; missing tabs and API errors fail visibly.
 - `DRY_RUN=1` extracts and transforms, applies the quality gates, logs completion, and skips BigQuery client creation and all BigQuery calls, including the `pipeline_runs` insert. An automated test verifies the dry-run path does not create a BigQuery client or call the loader/model code.
 - Empty-extract and 20% maximum reject-rate quality gates.
 - CI and pipeline GitHub Actions workflow definitions. The pipeline workflow runs manually or daily at `15 5 * * *` UTC.
+- The GitHub pipeline workflow exposes the optional `REPORT_SHEET_ID` repository variable to the application.
 - Vitest unit tests for contact transformation, HubSpot retry behavior, pagination, and dry-run isolation (all tests use mock responses; no live API calls).
 - An earlier authenticated end-to-end run was observed on 2026-11-25: **302 records extracted, 15 rejected, and both SQL models built**. Before the metric correction, that run reported `rows_loaded: 302` (287 accepted contacts plus 15 rejects). The current metric counts accepted contacts only.
 - `npm run setup:bq` succeeded and reported that all three base tables already existed.
 - Two subsequent authenticated pipeline runs both succeeded with **302 extracted, 287 accepted contacts loaded, 15 rejected, and both SQL models built**. BigQuery confirmed the contacts partition remained at 287 rows after the second run, and both successful records were present in `pipeline_runs`.
 - A controlled run with a temporary invalid token exited non-zero and wrote a `failed` record to `pipeline_runs`; `.env` was not changed. BigQuery confirmed the daily reject breakdown was 15 `missing_email`.
-- The last recorded test run passed: **3 test files, 11 tests**.
-- The zero-row partition replacement implementation was covered by an added unit test; the last test run passed with **3 test files, 12 tests**.
+- The zero-row partition replacement and Google Sheets publisher have unit coverage. The latest local test run passed: **4 test files, 16 tests**.
 
 ### Not present or not yet verified
 
-- No checked-in `README.md` is recorded at the last review.
-- No Looker Studio dashboard URL, screenshots, or verified dashboard deployment is recorded in this repository.
+- A README is checked in, but no verified Google Sheet or Looker Studio dashboard URL, screenshot, or deployment is recorded.
+- Google Sheets publishing is optional until the owner creates the required tabs, enables the Sheets API, shares the spreadsheet with the service account, and configures `REPORT_SHEET_ID`.
 - `HUBSPOT_TOKEN`, `GCP_SA_KEY`, and `GCP_PROJECT_ID` are configured in GitHub Actions. The repository variable and secret names are not secret values and may be referenced in workflow configuration.
 - Workflow actions use the current major tags checked for this change: `actions/checkout@v7`, `actions/setup-node@v7`, and `google-github-actions/auth@v3`.
 - The guide's dashboard, fresh-clone, and final application checkpoints are future work unless independently verified.
@@ -86,6 +87,7 @@ Never report any of these planned items as shipped without checking the reposito
 - JavaScript ES modules (`"type": "module"`).
 - Node.js `>=20` (the package declares this in `package.json`).
 - Runtime dependencies: `@google-cloud/bigquery`, `dotenv`.
+- Google Sheets API client dependency: `googleapis`.
 - Test dependency: `vitest`.
 - There is no configured build, lint, or type-check command.
 
@@ -123,6 +125,7 @@ Optional settings and defaults:
 - `HUBSPOT_CONTACTS_PATH` → `/crm/v3/objects/contacts`
 - `BQ_DATASET` → `marketing`
 - `BQ_LOCATION` → `US`
+- `REPORT_SHEET_ID` → unset by default; when set, enables publishing of three aggregate report tabs.
 - `GOOGLE_APPLICATION_CREDENTIALS` is consumed by Google authentication libraries; it must point to a valid credential JSON file if using a service-account key.
 
 Local setup:
@@ -135,7 +138,7 @@ Local setup:
 
 An earlier run failed because the credential environment variable pointed to a directory, then to a non-credential file. It was subsequently corrected locally and `npm run setup:bq` succeeded. The actual local `.env` is ignored and deliberately not recorded in this report.
 
-The GitHub pipeline workflow expects repository secret `HUBSPOT_TOKEN`, repository secret `GCP_SA_KEY` (complete service-account JSON), and repository variable `GCP_PROJECT_ID`. Configure these directly in GitHub Settings; never add them to the repository or chat. `google-github-actions/auth@v3` supplies Google credentials to the job.
+The GitHub pipeline workflow expects repository secret `HUBSPOT_TOKEN`, repository secret `GCP_SA_KEY` (complete service-account JSON), and repository variable `GCP_PROJECT_ID`. `REPORT_SHEET_ID` is an optional repository variable. Configure these directly in GitHub Settings; never add secret values to the repository or chat. `google-github-actions/auth@v3` supplies Google credentials to BigQuery and the Sheets API.
 
 ## 6. Pipeline behavior, step by step
 
@@ -196,7 +199,7 @@ The SQL uses BigQuery backticks and GoogleSQL syntax. It is not SQL Server SQL. 
 ## 8. Important operational limitations and risks
 
 1. **Dry run still reads HubSpot.** It avoids all BigQuery calls/writes, but makes live HubSpot API requests and can fail its quality gates.
-2. **Zero-row loads are skipped.** `loadNdjson()` returns immediately for empty arrays. If a date partition previously had rows and a later same-day run has zero rows for that table, the old partition is not cleared by the skipped load.
+2. **Zero-row loads use partition deletion.** `loadNdjson()` returns immediately for empty arrays; the runner explicitly deletes that day from the corresponding table to avoid stale same-day rows.
 3. **Run logging has a boundary.** Dataset/table setup failures may happen before `pipeline_runs` can be written. A failure while writing the run record is surfaced as `run_log_failed`.
 4. **Existing schemas are not migrated.** The setup script only creates missing tables; schema changes require a deliberate migration or table recreation plan.
 5. **Full extraction each run.** The runner collects all HubSpot pages into memory before transformation; suitable for the current small demo, not necessarily large data volumes.
@@ -204,7 +207,9 @@ The SQL uses BigQuery backticks and GoogleSQL syntax. It is not SQL Server SQL. 
 7. **Raw IDs and domains remain.** Email addresses are removed, but HubSpot contact IDs and email domains are still potentially sensitive or identifying.
 8. **Mutating helper scripts.** `npm run seed` adds properties and contacts. `scripts/probe.js` sends property-creation POST requests. Only use them with an explicitly approved test account.
 9. **External prerequisites.** Real execution requires valid HubSpot credentials/scopes, valid Google credentials, and BigQuery permissions/billing or sandbox access. Do not substitute SQL Server for BigQuery to work around SQL dialect errors.
-10. **Deployment not yet verified.** CI and manual workflow files are present, but require a successful GitHub Actions run. The pipeline cron is deliberately disabled until a manual run succeeds. No dashboard or public link is verified.
+10. **Optional dashboard publisher.** If `REPORT_SHEET_ID` is configured, the pipeline writes only aggregate lead, funnel, and run metadata fields to the three required tabs. Sheets publishing errors fail the workflow, but are reported after the BigQuery run record is written.
+11. **Sandbox retention.** BigQuery Sandbox has a 10 GiB lifetime storage quota; tables, views, and partitions expire after 60 days. Confirm current Google limits before relying on Sandbox for a portfolio demo.
+12. **Deployment not fully verified.** CI and manual pipeline runs are verified and the daily schedule is enabled. No Google Sheet, Looker Studio dashboard, or successful end-to-end Sheets publish has yet been verified.
 
 ## 9. Suggested next steps from the supplied build guide
 
@@ -213,10 +218,11 @@ Treat this as a roadmap, not a statement of current functionality:
 1. GitHub Actions CI and the manual pipeline workflow are verified.
 2. `HUBSPOT_TOKEN`, `GCP_SA_KEY`, and `GCP_PROJECT_ID` are configured in GitHub settings.
 3. Two manual pipeline runs succeeded and confirmed BigQuery run metadata. The daily schedule (`15 5 * * *` UTC) is now enabled.
-4. Empty partition replacement is implemented and unit-tested for table inputs with no rows.
-5. Build and verify Looker Studio data sources/dashboard; document a public URL only if intentionally published.
-6. Add a README with architecture, verified run results, privacy/cost/retention limits, and quick start. Do not invent dashboard URLs, scheduled-run metrics, or success rates.
-7. Run a fresh-clone verification and scan both current files and Git history for exposed credentials before sharing the repository.
+4. Empty partition replacement and optional aggregate Sheets publishing are implemented and covered by unit tests.
+5. Create the spreadsheet, tabs, service-account sharing, and `REPORT_SHEET_ID`; manually run the workflow and verify its three tabs refresh correctly.
+6. Create and verify Looker Studio data sources/dashboard; document a public URL only if intentionally published and safe.
+7. README includes architecture, setup, privacy, and known free-tier retention limits. Keep actual external run metrics and links evidence-based.
+8. Run fresh-clone verification and scan current files and Git history for exposed credentials before wider sharing.
 
 The supplied guide has example snippets that differ from the checked-in implementation. Its module example imports `bigquery/models.js`, while the actual module is `src/bigquery/model.js`. Prefer the code in this repository, then update the guide/report intentionally.
 

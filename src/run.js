@@ -10,6 +10,7 @@ import { clearPartition, loadNdjson } from './bigquery/load.js';
 import { runModels } from './bigquery/model.js';
 import { CONTACT_SCHEMA, REJECT_SCHEMA, RUN_SCHEMA } from './bigquery/schemas.js';
 import { log } from './logger.js';
+import { publishReports } from './reports/sheets.js';
 
 const MAX_REJECT_RATE = 0.2;
 
@@ -37,6 +38,7 @@ export async function runPipeline({
   load = loadNdjson,
   clear = clearPartition,
   buildModels = runModels,
+  publish = publishReports,
   logger = log,
   now = () => new Date(),
 } = {}) {
@@ -149,6 +151,17 @@ export async function runPipeline({
 
   if (runLogError) throw runLogError;
   if (run.status === 'failed') throw new Error(run.error);
+  if (!dryRun && cfg.reportSheetId) {
+    try {
+      const reportCounts = await publish({ bq, cfg });
+      logger('info', 'reports_published', reportCounts);
+    } catch (error) {
+      logger('error', 'reports_publish_failed', { error: errorMessage(error) });
+      throw error;
+    }
+  } else if (!dryRun) {
+    logger('info', 'reports_publish_skipped', { reason: 'REPORT_SHEET_ID is not configured' });
+  }
   return run;
 }
 
