@@ -1,5 +1,7 @@
 # Marketing Data Pipeline
 
+[![CI](https://github.com/Desmond-Ed/marketing-data-pipeline/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Desmond-Ed/marketing-data-pipeline/actions/workflows/ci.yml)
+
 A Node.js pipeline that extracts HubSpot CRM contacts, validates and deduplicates them, loads privacy-minimized records into BigQuery, and publishes aggregate reports to a Looker Studio dashboard. It includes data-quality gates, retry handling, and a GitHub Actions workflow scheduled to run daily.
 
 **[Live Marketing Pipeline Dashboard](https://datastudio.google.com/reporting/f517ada2-4800-4078-92be-2926c07fe757)** (synthetic/test data)
